@@ -45,17 +45,26 @@ function touchslider_show()
 				<div class="image" style="background-image: url('<?php the_post_thumbnail_url('slider', array('class' => 'img-fluid')); ?>');">
 					<!-- <a href="<?php echo esc_attr(get_post_meta($post->ID, '_link', true)); ?>"></a> -->
 				</div>
+				<div class="slider-title"  data-swiper-parallax="80%" data-swiper-parallax-opacity="0">
+					<span class="<?php echo esc_attr(get_post_meta($post->ID, '_class_slider_title', true)); ?>"  style="color:<?php echo esc_attr(get_post_meta($post->ID, '_slider_color', true)); ?>"><?php echo esc_attr(get_post_meta($post->ID, '_slider_title', true)); ?></span>
+				</div>
 			</div>
-			<!-- <div class="title" data-swiper-parallax-x="-3000" data-swiper-parallax-opacity="0"><?php the_title(); ?></div> -->
 			<div class="title">
-				<div class="title-wrapper container-fluid">
-					<div class="<?php echo esc_attr(get_post_meta($post->ID, '_class_title', true)); ?>" data-swiper-parallax-x="-3000" >
-						<span style="color:<?php echo esc_attr(get_post_meta($post->ID, '_color', true)); ?>"><?php echo esc_attr(get_post_meta($post->ID, '_title', true)); ?></span>
+			<?php
+				if (get_post_meta($post->ID, '_class_title', true) != '' || get_post_meta($post->ID, '_class_text', true) != ''): 
+			?>
+				<div class="title-wrapper">
+					<div>
+						<span class="<?php echo esc_attr(get_post_meta($post->ID, '_class_title', true)); ?>" style="color:<?php echo esc_attr(get_post_meta($post->ID, '_color', true)); ?>"><?php echo esc_attr(get_post_meta($post->ID, '_title', true)); ?></span>
 					</div>
-					<div class="<?php echo esc_attr(get_post_meta($post->ID, '_class_text', true)); ?>" data-swiper-parallax-x="-3000" >
-						<span style="color:<?php echo esc_attr(get_post_meta($post->ID, '_color', true)); ?>"><?php echo esc_attr(get_post_meta($post->ID, '_text', true)); ?></span>
+					<div>
+						<p class="<?php echo esc_attr(get_post_meta($post->ID, '_class_text', true)); ?>" style="color:<?php echo esc_attr(get_post_meta($post->ID, '_color', true)); ?>"><?php echo esc_attr(get_post_meta($post->ID, '_text', true)); ?></p>
 					</div>
 				</div>
+			<?php
+				endif;
+			?>
+
 			</div>
 		</div>
 		<?php
@@ -83,15 +92,13 @@ function touchslider_script()
 <script type="text/javascript">
 	(function($) {
 		$(document).ready(function() {
-			//initialize swiper when document ready
-			var effectOption = "fade";
-			var parallaxOption = false;
+			var effectOption = "slide";
+			var parallaxOption = true;
 			if (/Edge/.test(navigator.userAgent)) {
 				effectOption = "fade";
 				parallaxOption = false;
 			}
 			var swiper = new Swiper('.swiper-container', {
-				// effect: 'slide',
 				init: false,
 				effect: effectOption,
 				parallax: parallaxOption,
@@ -121,10 +128,16 @@ function touchslider_script()
 			function animatedCss() {
 				$('.swiper-wrapper').find('.swiper-slide').each(function(){
 					if($(this).hasClass('swiper-slide-active')){
-						$(this).find('.title-wrapper > div').addClass('animated');
+						$(this).find('.title-wrapper span').addClass('animated');
+						$(this).find('.title-wrapper p').addClass('animated');
+						$(this).find('.title').addClass('animated');
+
 					}
 					else{
-						$(this).find('.title-wrapper > div.animated').removeClass('animated');
+						$(this).find('.title-wrapper span.animated').removeClass('animated');
+						$(this).find('.title-wrapper p.animated').removeClass('animated');
+						$(this).find('.title').removeClass('animated');
+
 					}
 				});
 			}
@@ -146,7 +159,7 @@ class TouchSlider
 	{
 
 		add_action('init', array($this, 'touchslider_init'));
-		add_action( 'admin_print_scripts-post.php', array($this, 'load_admin_scripts'));
+		add_action('admin_print_scripts-post.php', array($this, 'load_admin_scripts'));
 		add_action('add_meta_boxes', array($this, 'touchslider_metaboxes')); // Ajoute une metaboxe
 		add_action('save_post_slide', array($this, 'touchslider_savepost'), 10, 2); // Pour récupérer le contenu de la metaboxe
 
@@ -184,6 +197,7 @@ class TouchSlider
 			'public' => true,
 			'labels' => $labels,
 			'menu_position' => 9,
+			'menu_icon' => 'dashicons-images-alt2',
 			'capability_type' => 'post',
 			'supports' => array('title', 'thumbnail', 'page-attributes'),
 		);
@@ -225,7 +239,7 @@ class TouchSlider
 	public function touchslider_metaboxes()
 	{
 		add_meta_box('touchslider', 'lien', array($this, 'touchslider_link_metabox'), 'slide', 'normal', 'high');
-		add_meta_box('touchslider-slogan', 'slogan', array($this, 'touchslider_slogan_metabox'), 'slide', 'normal', 'high');
+		add_meta_box('touchslider-slogan', 'Textes', array($this, 'touchslider_slogan_metabox'), 'slide', 'normal', 'high');
 		// add_meta_box('touchslider-params', 'paramètres du slide', array($this, 'touchslider_metabox_params'), 'type-slide', 'normal', 'high');
 
 	}
@@ -260,6 +274,17 @@ class TouchSlider
 		wp_nonce_field('touchslider', 'touchslider_nonce_slogan');
 ?>
 	<div class="meta-box-item-title">
+		<h4>Titre du slide</h4>
+	</div>
+	<div class="meta-box-item-content">
+		<label for="touchslider_slide_title">titre</label>
+		<input id="touchslider_slide_title" type="text" name="touchslider_slide_title" style="width:100%;" value="<?php echo esc_attr(get_post_meta($object->ID, '_slider_title', true)); ?>">
+		<label for="touchslider_slide_class_title">classe CSS</label>
+		<input id="touchslider_slide_class_title" type="text" name="touchslider_slide_class_title" style="width:100%;" value="<?php echo esc_attr(get_post_meta($object->ID, '_class_slider_title', true)); ?>">
+		<label for="touchslider_slide_class_text">couleur</label>
+		<input id="touchslider_slide_color" name="touchslider_slide_color" type='text' class='color-field' value="<?php echo esc_attr(get_post_meta($object->ID, '_slider_color', true)); ?>">
+		</div>
+	<div class="meta-box-item-title">
 		<h4>slogan du slide</h4>
 	</div>
 	<div class="meta-box-item-content">
@@ -278,7 +303,7 @@ class TouchSlider
 	}
 
 	/**
-	 * Récupére le contenu de la metaboxe link des slides
+	 * Récupére le contenu de la metaboxe des slides
 	 *
 	 * @param [type] $post_id
 	 * @param [type] $post
@@ -292,6 +317,19 @@ class TouchSlider
 		if ( isset( $_POST['touchslider_link'] ) ) {
 			update_post_meta($post_id, '_link', sanitize_text_field($_POST['touchslider_link']));
 		}
+
+		if ( isset( $_POST['touchslider_slide_title'] ) ) {
+			update_post_meta($post_id, '_slider_title', sanitize_text_field($_POST['touchslider_slide_title']));
+		}
+		if ( isset( $_POST['touchslider_slide_class_title'] ) ) {
+			update_post_meta($post_id, '_class_slider_title', sanitize_text_field($_POST['touchslider_slide_class_title']));
+		}
+		if ( isset( $_POST['touchslider_slide_color'] ) ) {
+			update_post_meta($post_id, '_slider_color', sanitize_text_field($_POST['touchslider_slide_color']));
+		}
+
+
+
 		if ( isset( $_POST['touchslider_slogan_title'] ) ) {
 			update_post_meta($post_id, '_title', sanitize_text_field($_POST['touchslider_slogan_title']));
 		}
